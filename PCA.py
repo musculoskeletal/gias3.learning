@@ -21,8 +21,12 @@ import sys
 import scipy
 from scipy import io
 from scipy.linalg import eig, svd
-from matplotlib import pyplot as plot
-import matplotlib as mpl
+
+try:
+	from matplotlib import pyplot as plot
+	import matplotlib as mpl
+except ImportError:
+	print('No Matplotlib, plotting functions will not work.')
 
 def loadPrincipalComponents( filename ):
 	pc = PrincipalComponents()
