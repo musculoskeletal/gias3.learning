@@ -116,7 +116,9 @@ def mahalanobis( x ):
 class PCFit( object ):
 	
 	xtol = 1e-6
-	ftol = 0.0
+	ftol = 1e-6
+	maxiter = None
+	maxfev = None
 	useFMin = False
 
 	def __init__(self, pc=None):
@@ -144,6 +146,8 @@ class PCFit( object ):
 								 args=(p0, func, funcArgs),
 								 xtol=self.xtol,
 								 ftol=self.ftol,
+								 maxiter=self.maxiter,
+								 maxfun=self.maxfev,
 								 )
 		else:
 			self.rigidOpt = leastsq(rigidObj, x0,
@@ -171,6 +175,8 @@ class PCFit( object ):
 								 args=(p0, func, funcArgs),
 								 xtol=self.xtol,
 								 ftol=self.ftol,
+								 maxiter=self.maxiter,
+								 maxfun=self.maxfev,
 								 )
 		else:
 			self.rigidScaleOpt = leastsq(rigidScaleObj, x0,
@@ -192,7 +198,9 @@ class PCFit( object ):
 			self.rigidMode0Opt = fmin(rigidMode0Obj, x0,
 								 	  args=(func, self.pc, mWeight, funcArgs),
 								 	  xtol=self.xtol,
-								 	  ftol=self.ftol
+								 	  ftol=self.ftol,
+								 	  maxiter=self.maxiter,
+								 	  maxfun=self.maxfev,
 								 	  )
 		else:	
 			self.rigidMode0Opt = leastsq(rigidMode0Obj, x0,
@@ -218,11 +226,14 @@ class PCFit( object ):
 		# print 'mWeight:', mWeight
 
 		if self.useFMin:
+			if maxfev is None:
+				maxfev = self.maxfev
 			self.rigidModeNOpt = fmin(rigidModeNObj, x0,
 								 	  args=(func, self.pc, modes, mWeight, funcArgs),
 								 	  xtol=self.xtol,
 								 	  ftol=self.ftol,
-								 	  maxfun=maxfev
+								 	  maxfun=maxfev,
+								 	  maxiter=self.maxiter,
 								 	  )
 		else:
 			if maxfev is None:
@@ -256,11 +267,14 @@ class PCFit( object ):
 		# print '\nrigidModeNRotateAboutCoMFit x0:', x0
 		# print 'mWeight:', mWeight
 		if self.useFMin:
+			if maxfev is None:
+				maxfev = self.maxfev
 			self.rigidModeNOpt = fmin(rigidModeNRotateAboutCoMObj, x0,
 								 	  args=(func, self.pc, modes, mWeight, funcArgs),
 								 	  xtol=self.xtol,
 								 	  ftol=self.ftol,
-								 	  maxfun=maxfev
+								 	  maxiter=self.maxiter,
+								 	  maxfun=maxfev,
 								 	  )
 		else:
 			if maxfev is None:
@@ -291,11 +305,14 @@ class PCFit( object ):
 			modes = [0,1,2]
 			
 		if self.useFMin:
+			if maxfev is None:
+				maxfev = self.maxfev
 			self.rigidScaleModeNOpt = fmin(rigidScaleModeNObj, x0,
 								 	  	   args=(func, self.pc, modes, mWeight, funcArgs),
 								 	  	   xtol=self.xtol,
 								 	  	   ftol=self.ftol,
-								 	  	   maxfun=maxfev
+								 	  	   maxfun=maxfev,
+								 	  	   maxiter=self.maxiter,
 								 	  	   )
 		else:
 			if maxfev is None:
@@ -328,11 +345,14 @@ class PCFit( object ):
 		rigidT = self.rigidMode0Opt[:6]
 		
 		if self.useFMin:
+			if maxfev is None:
+				maxfev = self.maxfev
 			self.modeNOpt = fmin(modeNObj, x0,
 					 	  	     args=(func, self.pc, modes, mWeight, funcArgs),
 					 	  	     xtol=self.xtol,
 					 	  	     ftol=self.ftol,
-					 	  	     maxfun=maxfev
+					 	  	     maxfun=maxfev,
+					 	  	     maxiter=self.maxiter,
 					 	  	     )
 		else:
 			self.modeNOpt = leastsq(modeNObj, x0,
