@@ -134,9 +134,9 @@ class PCFit( object ):
 		self.pc = pc
 	
 	def rigidFit( self, func, x0=None, funcArgs=(), p0=None ):
-		if x0==None:
+		if x0 is None:
 			x0=scipy.array([0.0,0.0,0.0,0.0,0.0,0.0])
-		if p0==None:
+		if p0 is None:
 			p0 = self.pc.getMean().reshape( (3,-1) ).T
 				
 		x0 = scipy.array(x0)
@@ -162,9 +162,9 @@ class PCFit( object ):
 		return self.rigidOpt, pOpt.ravel()
 	
 	def rigidScaleFit( self, func, x0=None, funcArgs=(), p0=None ):
-		if x0==None:
+		if x0 is None:
 			x0=[0.0,0.0,0.0,0.0,0.0,0.0,1.0]
-		if p0==None:
+		if p0 is None:
 			p0 = self.pc.getMean().reshape( (3,-1) ).T	
 			
 		x0 = scipy.array(x0)
@@ -189,7 +189,7 @@ class PCFit( object ):
 		return self.rigidScaleOpt, pOpt.ravel()
 	
 	def rigidMode0Fit( self, func, x0=None, mWeight=0.0, funcArgs=() ):
-		if x0==None:
+		if x0 is None:
 			x0 = scipy.hstack( (self.rigidOpt, 0.0) )
 		elif len(x0)!=7:
 			raise ValueError, 'x0 must be 7 long'
@@ -216,9 +216,9 @@ class PCFit( object ):
 		
 	def rigidModeNFit( self, func, modes=None, x0=None, mWeight=0.0, maxfev=None, funcArgs=() ):
 		# fit modes beyond mode 0
-		if x0==None:
+		if x0 is None:
 			x0 = scipy.hstack( ( self.rigidMode0Opt, scipy.zeros( len(modes) ) ) )
-		if modes==None:
+		if modes is None:
 			modes = [1,2,3]
 			
 		modes = scipy.hstack( (0,modes) )
@@ -258,9 +258,9 @@ class PCFit( object ):
 		
 	def rigidModeNRotateAboutCoMFit( self, func, modes=None, x0=None, mWeight=0.0, maxfev=None, funcArgs=() ):
 		# fit modes beyond mode 0
-		if x0==None:
+		if x0 is None:
 			x0 = scipy.hstack( ( self.rigidMode0Opt, scipy.zeros( len(modes) ) ) )
-		if modes==None:
+		if modes is None:
 			modes = [1,2,3]
 			
 		modes = scipy.hstack( (0,modes) )
@@ -299,9 +299,9 @@ class PCFit( object ):
 
 	def rigidScaleModeNFit( self, func, modes=None, x0=None, mWeight=0.0, maxfev=None, funcArgs=() ):
 		# fit modes
-		if x0==None:
+		if x0 is None:
 			x0 = scipy.hstack( ( self.rigidScaleOpt, scipy.zeros( len(modes) ) ) )
-		if modes==None:
+		if modes is None:
 			modes = [0,1,2]
 			
 		if self.useFMin:
@@ -336,9 +336,9 @@ class PCFit( object ):
 	def modeNFit( self, func, modes=None, x0=None, funcArgs=() ):
 		""" fit mode weights only
 		"""
-		if x0==None:
+		if x0 is None:
 			x0 = scipy.hstack( (self.rigidMode0Opt[-1], scipy.zeros( len(modes) ) ) )
-		if modes==None:
+		if modes is None:
 			modes = [1,2,3]
 			
 		modes = scipy.hstack( (0,modes) )
@@ -371,7 +371,7 @@ def project3DPointsToSSM(data, SSM, projectModes, projectVariables=None,
 						 verbose=False, retT=False):
 	
 	# rigid align data to SSM mean data
-	if initRotation==None:
+	if initRotation is None:
 		initRotation = scipy.array([0.0,0.0,0.0])
 
 	# landmarkIs = scipy.array(landmarkIs, dtype=int)
@@ -435,7 +435,7 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
 	
 	print 'fitting SSM to points'
 	# rigid align data to SSM mean data
-	if initRotation==None:
+	if initRotation is None:
 		initRotation = scipy.array([0.0,0.0,0.0])
 	else:
 		initRotation = scipy.array(initRotation)
@@ -449,7 +449,7 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
 	
 	# print 'data shape:', data.shape
 	# print 'meandata shape:', meanData.shape
-	if fitPointIndices==None:
+	if fitPointIndices is None:
 		print 'fitPointIndices shape: None'
 	else:
 		print 'fitPointIndices shape:', fitPointIndices.shape
@@ -519,7 +519,7 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
 	# PC Fit
 	x0 = scipy.hstack([[0,0,0], initRotation, scipy.zeros(len(fitModes), dtype=float)])
 
-	if landmarkTargets==None:
+	if landmarkTargets is None:
 		print 'using non-landmark obj func'
 		xOpt = leastsq( _obj, x0, xtol=1e-6 )[0]
 	else:
