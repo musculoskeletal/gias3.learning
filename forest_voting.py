@@ -51,6 +51,6 @@ class ExtraTreesRegressorVoter(ExtraTreesRegressor):
         all_y_hat = Parallel(n_jobs=n_jobs, verbose=self.verbose)(
             delayed(_parallel_predict_regression)(
             self.estimators_[starts[i]:starts[i + 1]], X)
-            for i in xrange(n_jobs))
+            for i in range(n_jobs))
 
         return all_y_hat

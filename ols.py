@@ -16,7 +16,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ===============================================================================
 """
 
-from __future__ import division
+
 from scipy import c_, ones, dot, stats, diff
 from scipy.linalg import inv, solve, det
 from numpy import log, pi, sqrt, square, diagonal
@@ -157,29 +157,29 @@ class ols:
         omni, omnipv = self.omni()
 
         # printing output to screen
-        print '\n=============================================================================='
-        print "Dependent Variable: " + self.y_varnm
-        print "Method: Least Squares"
-        print "Date: ", time.strftime("%a, %d %b %Y",t)
-        print "Time: ", time.strftime("%H:%M:%S",t)
-        print '# obs:               %5.0f' % self.nobs
-        print '# variables:     %5.0f' % self.ncoef 
-        print '=============================================================================='
-        print 'variable     coefficient     std. Error      t-statistic     prob.'
-        print '=============================================================================='
+        print('\n==============================================================================')
+        print("Dependent Variable: " + self.y_varnm)
+        print("Method: Least Squares")
+        print("Date: ", time.strftime("%a, %d %b %Y",t))
+        print("Time: ", time.strftime("%H:%M:%S",t))
+        print('# obs:               %5.0f' % self.nobs)
+        print('# variables:     %5.0f' % self.ncoef) 
+        print('==============================================================================')
+        print('variable     coefficient     std. Error      t-statistic     prob.')
+        print('==============================================================================')
         for i in range(len(self.x_varnm)):
-            print '''% -5s          % -5.6f     % -5.6f     % -5.6f     % -5.6f''' % tuple([self.x_varnm[i],self.b[i],self.se[i],self.t[i],self.p[i]]) 
-        print '=============================================================================='
-        print 'Models stats                         Residual stats'
-        print '=============================================================================='
-        print 'R-squared            % -5.6f         Durbin-Watson stat  % -5.6f' % tuple([self.R2, self.dw()])
-        print 'Adjusted R-squared   % -5.6f         Omnibus stat        % -5.6f' % tuple([self.R2adj, omni])
-        print 'F-statistic          % -5.6f         Prob(Omnibus stat)  % -5.6f' % tuple([self.F, omnipv])
-        print 'Prob (F-statistic)   % -5.6f			JB stat             % -5.6f' % tuple([self.Fpv, JB])
-        print 'Log likelihood       % -5.6f			Prob(JB)            % -5.6f' % tuple([ll, JBpv])
-        print 'AIC criterion        % -5.6f         Skew                % -5.6f' % tuple([aic, skew])
-        print 'BIC criterion        % -5.6f         Kurtosis            % -5.6f' % tuple([bic, kurtosis])
-        print '=============================================================================='
+            print('''% -5s          % -5.6f     % -5.6f     % -5.6f     % -5.6f''' % tuple([self.x_varnm[i],self.b[i],self.se[i],self.t[i],self.p[i]])) 
+        print('==============================================================================')
+        print('Models stats                         Residual stats')
+        print('==============================================================================')
+        print('R-squared            % -5.6f         Durbin-Watson stat  % -5.6f' % tuple([self.R2, self.dw()]))
+        print('Adjusted R-squared   % -5.6f         Omnibus stat        % -5.6f' % tuple([self.R2adj, omni]))
+        print('F-statistic          % -5.6f         Prob(Omnibus stat)  % -5.6f' % tuple([self.F, omnipv]))
+        print('Prob (F-statistic)   % -5.6f			JB stat             % -5.6f' % tuple([self.Fpv, JB]))
+        print('Log likelihood       % -5.6f			Prob(JB)            % -5.6f' % tuple([ll, JBpv]))
+        print('AIC criterion        % -5.6f         Skew                % -5.6f' % tuple([aic, skew]))
+        print('BIC criterion        % -5.6f         Kurtosis            % -5.6f' % tuple([bic, kurtosis]))
+        print('==============================================================================')
 
 if __name__ == '__main__':
 
@@ -198,20 +198,20 @@ if __name__ == '__main__':
 	# if you have rpy installed, use it to test the results
 	have_rpy =  False
 	try:
-	    print "\n"
-	    print "="*30
-	    print "Validating OLS results in R"
-	    print "="*30
+	    print("\n")
+	    print("="*30)
+	    print("Validating OLS results in R")
+	    print("="*30)
 
 	    import rpy
 	    have_rpy = True
 	except ImportError:
-	    print "\n"
-	    print "="*30
-	    print "Validating OLS-class results in R"
-	    print "="*30
-	    print "rpy is not installed"
-	    print "="*30
+	    print("\n")
+	    print("="*30)
+	    print("Validating OLS-class results in R")
+	    print("="*30)
+	    print("rpy is not installed")
+	    print("="*30)
 
 	if have_rpy:
 	    y = data[:,0]
@@ -222,7 +222,7 @@ if __name__ == '__main__':
 	    rpy.set_default_mode(rpy.NO_CONVERSION)
 	    linear_model = rpy.r.lm(rpy.r("y ~ x1 + x2 + x3 + x4"), data = rpy.r.data_frame(x1=x1,x2=x2,x3=x3,x4=x4,y=y))
 	    rpy.set_default_mode(rpy.BASIC_CONVERSION)
-	    print linear_model.as_py()['coefficients']
+	    print(linear_model.as_py()['coefficients'])
 	    summary = rpy.r.summary(linear_model)
-	    print summary
+	    print(summary)
 
