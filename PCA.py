@@ -56,13 +56,17 @@ class PrincipalComponents( object ):
         self.sizes = sizes
     
     def save(self, filename):
-        return self.savePickle(filename)
+        # return self.savePickle(filename)
+        return self.savez(filename)
 
     def load(self, filename):
         try:
-            return self.loadPickle(filename)
-        except EOFError:
-            return self.loadShelve(filename)
+            return self.loadz(filename)
+        except:
+            try:
+                return self.loadPickle(filename)
+            except EOFError:
+                return self.loadShelve(filename)
 
     def saveShelve( self, filename ):
         s = shelve.open( filename+'.pc' )
@@ -87,6 +91,20 @@ class PrincipalComponents( object ):
             pickle.dump(s, f)
 
         return filename+'.pc' 
+
+    def savez(self, filename):
+        if os.path.splitext(filename)[1].lower()!='.pc':
+            filename += '.pc'
+
+        scipy.savez(
+            filename,
+            mean=self.mean,
+            weights=self.weight,
+            modes=self.modes,
+            SD=self.SD,
+            sizes=self.sizes,
+            projectedWeights=self.projectedWeights
+            )    
     
     def loadPickle(self, filename):
         try:
@@ -125,6 +143,18 @@ class PrincipalComponents( object ):
             
             self.projectedWeights = s.get('projectedWeights')
             self.sizes = s.get('sizes')
+
+    def loadz(self, filename):
+        s = scipy.load(filename)
+        self.mean = s['mean']
+        self.weights = s['weights']
+        self.modes = s['modes']
+        self.SD = s['SD']
+        if self.SD != None:
+            self.sdNorm = True
+        
+        self.projectedWeights = s.get('projectedWeights')
+        self.sizes = s.get('sizes')
     
     def setProjection( self, P ):
         self.projectedWeights = P
@@ -246,7 +276,10 @@ class PrincipalComponents( object ):
         d2 = ( w * w / self.weights[modes] ).sum()
 
         return d2
-        
+    
+# To load gias(1) .pc files
+principalComponents = PrincipalComponents
+
 class IndependentComponents( PrincipalComponents ):
     
     def setModes( self, m ):
