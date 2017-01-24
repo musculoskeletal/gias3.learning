@@ -79,8 +79,8 @@ def rigidModeNRotateAboutCoMObj( x, func, pca, modes, mWeight, funcArgs ):
     Err = funcErr + MErr
     
     #~ sys.stdout.write( '\rfunc rms:'+str(scipy.sqrt(funcErr.mean())) )
-    sys.stdout.write( '\rfunc rms:'+str(scipy.sqrt(Err.mean())) )
-    sys.stdout.flush()
+    # sys.stdout.write( '\rfunc rms:'+str(scipy.sqrt(Err.mean())) )
+    # sys.stdout.flush()
     
     return funcErr + MErr
     #~ return func( p.T.ravel(), *funcArgs ) + mahalanobis( x[6:] )*mWeight
@@ -96,8 +96,8 @@ def rigidScaleModeNObj( x, func, pca, modes, mWeight, funcArgs ):
     Err = funcErr + MErr
     
     #~ sys.stdout.write( '\rfunc rms:'+str(scipy.sqrt(funcErr.mean())) )
-    sys.stdout.write( '\rfunc rms:'+str(scipy.sqrt(Err.mean())) )
-    sys.stdout.flush()
+    # sys.stdout.write( '\rfunc rms:'+str(scipy.sqrt(Err.mean())) )
+    # sys.stdout.flush()
     
     return funcErr + MErr
 
