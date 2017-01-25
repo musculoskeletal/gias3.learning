@@ -483,8 +483,9 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
         else:
             E = ((reconData - dataT)**2.0).sum(1) + mahalanobis( X[6:] )*mWeight
 
-        sys.stdout.write( '\robj rms:'+str(scipy.sqrt(E.mean())) )
-        sys.stdout.flush()
+        if verbose:
+            sys.stdout.write( '\robj rms:'+str(scipy.sqrt(E.mean())) )
+            sys.stdout.flush()
 
         return E
 
@@ -508,10 +509,12 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
         ELandmarks = ((landmarkTargetsT - reconLandmarks)**2.0).sum(1)*landmarkWeights
         E = scipy.hstack([EData, ELandmarks])
 
-        sys.stdout.write('\rPC fit rmse: %6.3f (data: %6.3f) (landmarks: %6.3f)'%\
-                         (scipy.sqrt(E.mean()), scipy.sqrt(EData.mean()),scipy.sqrt(ELandmarks.mean()))
-                        )
-        sys.stdout.flush()
+        if verbose:
+            sys.stdout.write(
+                '\rPC fit rmse: %6.3f (data: %6.3f) (landmarks: %6.3f)'%\
+                (scipy.sqrt(E.mean()), scipy.sqrt(EData.mean()),scipy.sqrt(ELandmarks.mean()))
+                )
+            sys.stdout.flush()
 
         return E
     
