@@ -433,6 +433,27 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
                      landmarkTargets=None, landmarkEvaluator=None, landmarkWeights=None,
                      verbose=False):
     
+    """
+    Fit a shape model to a set of correspondent points by optimising
+    translation, rotation, and PCA scores.
+    
+    inputs
+    ------
+    data: nx3 array of target point coordinates. N Points must correspond to
+        points in the shape model
+    SSM: a gias2.learning.PCA.PrincipalComponents object
+    fitModes: a list of PC modes to fit, e.g. [0,1,2] to fit the 1st 3 modes.
+    
+    Returns
+    -------
+    xOpt: array of optimised parameters. First 3 elements are translation, 
+        then 3 for rotation, and the rest are PC scores in terms of standard
+        deviations.
+    reconDataOptT: fitted shape model points aligned to the mean shape
+    dataT: target data points aligned to the mean shape
+    reconDataOpt:  fitted shape model points aligned to the target data
+    """
+
     print('fitting SSM to points')
     # rigid align data to SSM mean data
     if initRotation is None:

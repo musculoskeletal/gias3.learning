@@ -52,7 +52,7 @@ class PrincipalComponents( object ):
         self.modes = modes  
         self.SD = SD
         self.sdNorm = 0
-        self.projectedWeights = projectedWeights
+        self.projectedWeights = projectedWeights  # scores of training data. Shapes of [n variables, n obs]
         self.sizes = sizes
     
     def save(self, filename):
