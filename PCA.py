@@ -12,6 +12,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ===============================================================================
 """
 
+import pdb
 
 import pickle
 import shelve
@@ -21,6 +22,8 @@ import sys
 import scipy
 from scipy import io
 from scipy.linalg import eig, svd
+
+from sklearn.decomposition import IncrementalPCA
 
 try:
     from matplotlib import pyplot as plot
@@ -51,7 +54,7 @@ class PrincipalComponents( object ):
         self.weights = weights
         self.modes = modes  
         self.SD = SD
-        self.sdNorm = 0
+        self.sdNorm = False
         self.projectedWeights = projectedWeights  # scores of training data. Shapes of [n variables, n obs]
         self.sizes = sizes
     
@@ -60,13 +63,14 @@ class PrincipalComponents( object ):
         return self.savez(filename)
 
     def load(self, filename):
-        try:
-            return self.loadz(filename)
-        except:
-            try:
-                return self.loadPickle(filename)
-            except EOFError:
-                return self.loadShelve(filename)
+        return self.loadz(filename)
+        # try:
+        #     return self.loadz(filename)
+        # except:
+        #     try:
+        #         return self.loadPickle(filename)
+        #     except EOFError:
+        #         return self.loadShelve(filename)
 
     def saveShelve( self, filename ):
         s = shelve.open( filename+'.pc' )
@@ -99,7 +103,7 @@ class PrincipalComponents( object ):
         scipy.savez(
             filename,
             mean=self.mean,
-            weights=self.weight,
+            weights=self.weights,
             modes=self.modes,
             SD=self.SD,
             sizes=self.sizes,
@@ -117,7 +121,7 @@ class PrincipalComponents( object ):
             self.weights = s['weights']
             self.modes = s['modes']
             self.SD = s['SD']
-            if self.SD != None:
+            if self.SD is not None:
                 self.sdNorm = True
             
             self.projectedWeights = s.get('projectedWeights')
@@ -138,9 +142,9 @@ class PrincipalComponents( object ):
             self.weights = s['weights']
             self.modes = s['modes']
             self.SD = s['SD']
-            if self.SD != None:
+            if self.SD is not None:
                 self.sdNorm = True
-            
+
             self.projectedWeights = s.get('projectedWeights')
             self.sizes = s.get('sizes')
 
@@ -150,11 +154,18 @@ class PrincipalComponents( object ):
         self.weights = s['weights']
         self.modes = s['modes']
         self.SD = s['SD']
-        if self.SD != None:
+        if len(self.SD.shape)!=0:
             self.sdNorm = True
         
-        self.projectedWeights = s.get('projectedWeights')
-        self.sizes = s.get('sizes')
+        try:
+            self.projectedWeights = s['projectedWeights']
+        except KeyError:
+            self.projectedWeights = None
+
+        try:
+            self.sizes = s['sizes']
+        except KeyError:
+            self.sizes = None
     
     def setProjection( self, P ):
         self.projectedWeights = P
@@ -244,6 +255,7 @@ class PrincipalComponents( object ):
         f = scipy.array( [ self.getMode(p) for p in modes ] ).T
         
         if self.sdNorm:
+            print(self.sdNorm)
             new = ( scipy.dot( f, weights ).squeeze() * self.getSD() + self.getMean() )
         else:
             new = ( scipy.dot( f, weights ).squeeze() + self.getMean() )
@@ -409,7 +421,19 @@ class PCA( object ):
         self.PC.setProjection( self.PC.project( self.data ) )
         
         return 1 
-    
+
+    def inc_svd_decompose(self, k):
+        """ decompose input data matrix into principal modes using incremental
+        SVD.
+        """
+
+        ipca = IncrementalPCA(n_components=k)
+        ipca.fit(self.data.T)
+        self.PC.setWeights(ipca.explained_variance_)
+        self.PC.setModes(ipca.components_.T)
+        self.PC.setProjection(self.PC.project(self.data))
+
+
     def lansvd_decompose( self, k, tempFolder, lansvdPath=None ):
         """ decompose input data matrix into principal modes using 
         PROPACK's lansvd implemented in matlab
