@@ -57,6 +57,9 @@ class PrincipalComponents( object ):
         self.sdNorm = False
         self.projectedWeights = projectedWeights  # scores of training data. Shapes of [n variables, n obs]
         self.sizes = sizes
+
+        self.explained_variance_ = None
+        self.explained_variance_ratio_ = None
     
     def save(self, filename):
         # return self.savePickle(filename)
@@ -188,6 +191,9 @@ class PrincipalComponents( object ):
         return self.mean.copy()
     
     def getNormSpectrum( self, skipfirst=0 ):
+        if self.explained_variance_ratio_ is not None:
+            return self.explained_variance_ratio_.copy()
+
         if skipfirst:
             return self.getWeight()[1:] / self.getWeight()[1:].sum()
         else:
@@ -432,7 +438,9 @@ class PCA( object ):
         self.PC.setWeights(ipca.explained_variance_)
         self.PC.setModes(ipca.components_.T)
         self.PC.setProjection(self.PC.project(self.data))
-
+        self.PC.explained_variance_ = ipca.explained_variance_
+        self.PC.explained_variance_ratio_ = ipca.explained_variance_ratio_
+        self.PC.ipca = ipca
 
     def lansvd_decompose( self, k, tempFolder, lansvdPath=None ):
         """ decompose input data matrix into principal modes using 
