@@ -66,14 +66,14 @@ class PrincipalComponents( object ):
         return self.savez(filename)
 
     def load(self, filename):
-        return self.loadz(filename)
-        # try:
-        #     return self.loadz(filename)
-        # except:
-        #     try:
-        #         return self.loadPickle(filename)
-        #     except EOFError:
-        #         return self.loadShelve(filename)
+        # return self.loadz(filename)
+        try:
+            return self.loadz(filename)
+        except:
+            try:
+                return self.loadPickle(filename)
+            except EOFError:
+                return self.loadShelve(filename)
 
     def saveShelve( self, filename ):
         s = shelve.open( filename+'.pc' )
