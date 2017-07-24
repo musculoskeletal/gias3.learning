@@ -431,7 +431,7 @@ def project3DPointsToSSM(data, SSM, projectModes, projectVariables=None,
 def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
                      initRotation=None, doScale=False, 
                      landmarkTargets=None, landmarkEvaluator=None, landmarkWeights=None,
-                     verbose=False):
+                     recon2coords=None, verbose=False):
     
     """
     Fit a shape model to a set of correspondent points by optimising
@@ -443,6 +443,11 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
         points in the shape model
     SSM: a gias2.learning.PCA.PrincipalComponents object
     fitModes: a list of PC modes to fit, e.g. [0,1,2] to fit the 1st 3 modes.
+    fitPointIndices: [optional] restrict fitting to certain points in the 
+        shape model
+    mWeight: [float, optional] mahalanobis weight
+    initRotation: [list, optional] initial x,y,z rotation in radians
+    doScale: [bool, False] fit for scaling
     
     Returns
     -------
@@ -454,6 +459,12 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
     reconDataOpt:  fitted shape model points aligned to the target data
     """
 
+    if recon2coords is None:
+        # Function to convert ssm data into point coordinates. Default is for
+        # fieldwork models
+        def recon2coords(xr):
+            return xr.reshape((3,-1)).T
+
     print('fitting SSM to points')
     # rigid align data to SSM mean data
     if initRotation is None:
@@ -464,9 +475,11 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
     # fit has to be done on a subset of recon data is projection is on a subset of variables
     if fitPointIndices!=None:
         fitPointIndices = scipy.array(fitPointIndices, dtype=int)
-        meanData = SSM.getMean().reshape((3,-1)).T[fitPointIndices,:]
+        # meanData = SSM.getMean().reshape(coord_shape).T[fitPointIndices,:]
+        meanData = recon2coords(SSM.getMean())[fitPointIndices,:]
     else:
-        meanData = SSM.getMean().reshape((3,-1)).T
+        # meanData = SSM.getMean().reshape(coord_shape).T
+        meanData = recon2coords(SSM.getMean())
     
     # print 'data shape:', data.shape
     # print 'meandata shape:', meanData.shape
@@ -476,31 +489,43 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
         print('fitPointIndices shape:', fitPointIndices.shape)
 
     if doScale:
-        align1X0 = scipy.hstack([ meanData.mean(0)-data.mean(0), initRotation, 1.0 ])
-        T1, dataT = alignment_fitting.fitRigidScale( data, meanData, align1X0, verbose=verbose )
+        align1X0 = scipy.hstack(
+            [meanData.mean(0)-data.mean(0), initRotation, 1.0]
+            )
+        T1, dataT = alignment_fitting.fitRigidScale(
+                        data, meanData, align1X0, verbose=verbose
+                        )
         if landmarkTargets!=None:
-            landmarkTargetsT = transform3D.transformRigidScale3DAboutP(landmarkTargets, T1,
-                                                                       data.mean(0)
-                                                                       )
+            landmarkTargetsT = transform3D.transformRigidScale3DAboutP(
+                                landmarkTargets, T1, data.mean(0)
+                                )
     else:
-        align1X0 = scipy.hstack([ meanData.mean(0)-data.mean(0), initRotation ])
+        align1X0 = scipy.hstack([meanData.mean(0)-data.mean(0), initRotation])
         # T1, dataT = alignment_fitting.fitRigid( data, meanData, align1X0, verbose=verbose )
-        T1, dataT = alignment_fitting.fitRigid( data, meanData, align1X0, xtol=1e-6, epsfcn=1e-9, verbose=verbose )
+        T1, dataT = alignment_fitting.fitRigid(
+            data, meanData, align1X0, xtol=1e-6, epsfcn=1e-9, verbose=verbose
+            )
         if landmarkTargets!=None:
-            landmarkTargetsT = transform3D.transformRigid3DAboutP(landmarkTargets, T1,
-                                                                  data.mean(0)
-                                                                  )
+            landmarkTargetsT = transform3D.transformRigid3DAboutP(
+                                landmarkTargets, T1, data.mean(0)
+                                )
 
     def _obj(X):
-        recon = SSM.reconstruct( SSM.getWeightsBySD( fitModes, X[6:] ), fitModes )
+        recon = SSM.reconstruct(
+                    SSM.getWeightsBySD(fitModes, X[6:]), fitModes
+                    )
         # reconstruct rigid transform
-        reconData = transform3D.transformRigid3DAboutCoM( recon.reshape((3,-1)).T, X[:6] )
+        reconData = transform3D.transformRigid3DAboutCoM(
+                        # recon.reshape(coord_shape).T, X[:6]
+                        recon2coords(recon), X[:6]
+                        )
 
         # print reconData[466]
 
         # calc error
         if fitPointIndices!=None:
-            E = ((reconData[fitPointIndices,:] - dataT)**2.0).sum(1) + mahalanobis( X[6:] )*mWeight
+            E = ((reconData[fitPointIndices,:] - dataT)**2.0).sum(1) +\
+                mahalanobis(X[6:])*mWeight
         else:
             E = ((reconData - dataT)**2.0).sum(1) + mahalanobis( X[6:] )*mWeight
 
@@ -511,19 +536,19 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
         return E
 
     def _objLandmarks(X):
-        recon = SSM.reconstruct( SSM.getWeightsBySD( fitModes, X[6:] ), fitModes )
+        recon = SSM.reconstruct(SSM.getWeightsBySD(fitModes, X[6:]), fitModes)
         # reconstruct rigid transform
-        reconData = transform3D.transformRigid3DAboutCoM( recon.reshape((3,-1)).T, X[:6] )
-        # reconLandmarks = transform3D.transformRigid3DAboutP( landmarkEvaluator(recon), X[:6], recon.reshape((3,-1)).T.mean(0) )
+        reconData = transform3D.transformRigid3DAboutCoM(
+                        # recon.reshape(coord_shape).T, X[:6]
+                        recon2coords(recon), X[:6]
+                        )
+        # reconLandmarks = transform3D.transformRigid3DAboutP( landmarkEvaluator(recon), X[:6], recon.reshape(coord_shape).T.mean(0) )
         reconLandmarks = landmarkEvaluator(reconData.T.ravel())
-
-        # print reconLandmarks[0]
-        # print reconData[466]
-        # print landmarkTargets[0]
 
         # calc error
         if fitPointIndices!=None:
-            EData = ((reconData[fitPointIndices,:] - dataT)**2.0).sum(1) + mahalanobis( X[6:] )*mWeight
+            EData = ((reconData[fitPointIndices,:] - dataT)**2.0).sum(1) +\
+                    mahalanobis(X[6:])*mWeight
         else:
             EData = ((reconData - dataT)**2.0).sum(1) + mahalanobis( X[6:] )*mWeight
 
@@ -539,7 +564,6 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
 
         return E
     
-    
     # PC Fit
     x0 = scipy.hstack([[0,0,0], initRotation, scipy.zeros(len(fitModes), dtype=float)])
 
@@ -554,24 +578,42 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
         xOpt = leastsq( _objLandmarks, x0, xtol=1e-6 )[0]
     print(' ')
         
-    reconOpt = SSM.reconstruct( SSM.getWeightsBySD( fitModes, xOpt[6:] ), fitModes )
-    reconDataOpt = transform3D.transformRigid3DAboutCoM( reconOpt.reshape((3,-1)).T, xOpt[:6] )
+    reconOpt = SSM.reconstruct(
+                SSM.getWeightsBySD(fitModes, xOpt[6:] ), fitModes
+                )
+    reconDataOpt = transform3D.transformRigid3DAboutCoM(
+                    # reconOpt.reshape(coord_shape).T, xOpt[:6]
+                    recon2coords(reconOpt), xOpt[:6]
+                    )
 
     # fit has to be done on a subset of recon data is projection is on a subset of variables
     if fitPointIndices!=None:
-        # reconDataFit = reconData.ravel()[projectVariables].reshape((3,-1)).T
-        reconDataFit = scipy.array(reconDataOpt.T.ravel().reshape((3,-1)).T[fitPointIndices,:])
+        # reconDataFit = reconData.ravel()[projectVariables].reshape(coord_shape).T
+        reconDataFit = scipy.array(
+            # reconDataOpt.T.ravel().reshape(coord_shape).T[fitPointIndices,:]
+            reconDataOpt[fitPointIndices,:]
+            )
     else:
         reconDataFit = scipy.array(reconDataOpt)
     
+    # TODO
     # inverse transform back to image
     if doScale:
-        align2X0 = scipy.hstack([ reconDataFit.mean(0)-data.mean(0), -initRotation, 1.0 ])
-        T2, reconDataFitT = alignment_fitting.fitRigidScale( reconDataFit, data, align2X0, verbose=verbose )
+        align2X0 = scipy.hstack([
+            reconDataFit.mean(0)-data.mean(0), -initRotation, 1.0
+            ])
+        T2, reconDataFitT = alignment_fitting.fitRigidScale(
+                                reconDataFit, data, align2X0, verbose=verbose
+                                )
     else:
-        align2X0 = scipy.hstack([ reconDataFit.mean(0)-data.mean(0), -initRotation ])
+        align2X0 = scipy.hstack([
+                    reconDataFit.mean(0)-data.mean(0), -initRotation
+                    ])
         # T2, reconDataT = alignment_fitting.fitRigid( reconData, data, align2X0, verbose=verbose )
-        T2, reconDataFitT = alignment_fitting.fitRigid( reconDataFit, data, align2X0, xtol=1e-6, epsfcn=1e-9, verbose=verbose )
+
+        T2, reconDataFitT = alignment_fitting.fitRigid(
+            reconDataFit, data, align2X0, xtol=1e-6, epsfcn=1e-9, verbose=verbose
+            )
 
     # transform full recon data to data space if data is a subset of variables
     if fitPointIndices!=None:
