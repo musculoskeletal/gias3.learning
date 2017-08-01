@@ -111,7 +111,20 @@ class PrincipalComponents( object ):
             SD=self.SD,
             sizes=self.sizes,
             projectedWeights=self.projectedWeights
-            )    
+            )
+
+    def savemat(self, filename):
+        """Save in MATLAB .mat format
+        """
+        mdict = {
+            'mean': self.mean,
+            'weights': self.weights,
+            'modes': self.modes,
+            # 'SD': self.SD,
+            # 'sizes': self.sizes,
+            'projectedWeights': self.projectedWeights
+        }
+        io.savemat(filename, mdict)
     
     def loadPickle(self, filename):
         try:
