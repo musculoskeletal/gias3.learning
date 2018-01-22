@@ -165,21 +165,29 @@ class PrincipalComponents( object ):
             self.sizes = s.get('sizes')
 
     def loadz(self, filename):
-        s = scipy.load(filename)
-        self.mean = s['mean']
-        self.weights = s['weights']
-        self.modes = s['modes']
-        self.SD = s['SD']
-        if len(self.SD.shape)!=0:
-            self.sdNorm = True
+        try:
+            s = scipy.load(filename)
+        except OSError:
+            try:
+                s = scipy.load(filename, encoding='bytes')
+            except:
+                raise IOError('unable to np.load '+filename)
+
+        self.mean = s[b'mean']
+        self.weights = s[b'weights']
+        self.modes = s[b'modes']
+        self.SD = s[b'SD']
+        if self.SD is not None:
+            if len(self.SD.shape)!=0:
+                self.sdNorm = True
         
         try:
-            self.projectedWeights = s['projectedWeights']
+            self.projectedWeights = s[b'projectedWeights']
         except KeyError:
             self.projectedWeights = None
 
         try:
-            self.sizes = s['sizes']
+            self.sizes = s[b'sizes']
         except KeyError:
             self.sizes = None
     
