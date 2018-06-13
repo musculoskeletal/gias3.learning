@@ -173,23 +173,43 @@ class PrincipalComponents( object ):
             except:
                 raise IOError('unable to np.load '+filename)
 
-        self.mean = s[b'mean']
-        self.weights = s[b'weights']
-        self.modes = s[b'modes']
-        self.SD = s[b'SD']
-        if self.SD is not None:
-            if len(self.SD.shape)!=0:
-                self.sdNorm = True
-        
-        try:
-            self.projectedWeights = s[b'projectedWeights']
-        except KeyError:
-            self.projectedWeights = None
+        if b'mean'  in s:
+            use_b = True
+        else:
+            use_b = False
 
-        try:
-            self.sizes = s[b'sizes']
-        except KeyError:
-            self.sizes = None
+        if use_b:
+            self.mean = s[b'mean']
+            self.weights = s[b'weights']
+            self.modes = s[b'modes']
+            self.SD = s[b'SD']
+            if self.SD is not None:
+                if len(self.SD.shape)!=0:
+                    self.sdNorm = True
+            try:
+                self.projectedWeights = s[b'projectedWeights']
+            except KeyError:
+                self.projectedWeights = None
+            try:
+                self.sizes = s[b'sizes']
+            except KeyError:
+                self.sizes = None
+        else:
+            self.mean = s['mean']
+            self.weights = s['weights']
+            self.modes = s['modes']
+            self.SD = s['SD']
+            if self.SD is not None:
+                if len(self.SD.shape)!=0:
+                    self.sdNorm = True
+            try:
+                self.projectedWeights = s['projectedWeights']
+            except KeyError:
+                self.projectedWeights = None
+            try:
+                self.sizes = s['sizes']
+            except KeyError:
+                self.sizes = None
     
     def setProjection( self, P ):
         self.projectedWeights = P
