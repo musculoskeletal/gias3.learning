@@ -166,10 +166,12 @@ class PrincipalComponents( object ):
 
     def loadz(self, filename):
         try:
-            s = scipy.load(filename)
+            # allow pickle so that object arrays can be loaded
+            # field with None were pickled as object arrays
+            s = scipy.load(filename, allow_pickle=True)
         except OSError:
             try:
-                s = scipy.load(filename, encoding='bytes')
+                s = scipy.load(filename, encoding='bytes', allow_pickle=True)
             except:
                 raise IOError('unable to np.load '+filename)
 
