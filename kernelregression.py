@@ -14,35 +14,39 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import numpy as np
 
+
 def _gaussianKernel(T, t, s):
-    c1 = 1.0/(s*np.sqrt(2*np.pi))
-    c2 = np.exp(-(T-t)**2.0/(2*s*s))
-    return c1*c2
+    c1 = 1.0 / (s * np.sqrt(2 * np.pi))
+    c2 = np.exp(-(T - t) ** 2.0 / (2 * s * s))
+    return c1 * c2
+
 
 def _gaussianKernelMax(s):
-    return 1.0/(s*np.sqrt(2*np.pi))
+    return 1.0 / (s * np.sqrt(2 * np.pi))
+
 
 def _weightedMean(x, w):
     # print x
     # print x.shape
     # print w.shape
-    return (x*w).sum(-1)/w.sum()
+    return (x * w).sum(-1) / w.sum()
+
 
 def _weightedSD(x, w):
     u = _weightedMean(x, w)
-    d = ((x.T - u).T)**2.0
-    return np.sqrt((d*w).sum(-1)/w.sum())
+    d = ((x.T - u).T) ** 2.0
+    return np.sqrt((d * w).sum(-1) / w.sum())
+
 
 class KernelRegressor(object):
-
     sigmaeps = 1e-6
 
     def __init__(self, k=2, sigma0=1.0, wmin=0.35):
         self.k = k
         self.sigma0 = sigma0
-        self.wmin = wmin    # kernel weight cutoff
-        
-        self.nTarg = None # target number of obs at each time point
+        self.wmin = wmin  # kernel weight cutoff
+
+        self.nTarg = None  # target number of obs at each time point
         self.sigmas = None
         self.n = None
         self.y = None
@@ -69,7 +73,7 @@ class KernelRegressor(object):
         self.y = y
         self.xmin = xmin
         self.xmax = xmax
-        self.sigmaeps = 1e-3*(xmax-xmin)
+        self.sigmaeps = 1e-3 * (xmax - xmin)
         self.xsamples = xsamples
         self.xt = np.linspace(self.xmin, self.xmax, self.xsamples)
 
@@ -79,9 +83,9 @@ class KernelRegressor(object):
         return self.ytmeans
 
     def _fitInit(self):
-        
+
         # initialise kernel width at each time point
-        self.sigmas = np.ones(self.xsamples)*self.sigma0
+        self.sigmas = np.ones(self.xsamples) * self.sigma0
 
         # calc number of obs at each y sampling (yt[i])
         self.xtn = []
@@ -106,15 +110,15 @@ class KernelRegressor(object):
         for i in range(self.xsamples):
             tyi = None
             change = 0
-            if self.xtn[i]>(self.xtnTarg+self.k):
-                while self.xtn[i]>(self.xtnTarg+self.k):
+            if self.xtn[i] > (self.xtnTarg + self.k):
+                while self.xtn[i] > (self.xtnTarg + self.k):
                     self.sigmas[i] -= self.sigmaeps
                     ty, tw, tyi = self._getKernelY(self.xt[i], self.sigmas[i])
                     self.xtn[i] = len(tw)
                 change = 1
-            
-            if self.xtn[i]<(self.xtnTarg-self.k):
-                while self.xtn[i]<(self.xtnTarg-self.k):
+
+            if self.xtn[i] < (self.xtnTarg - self.k):
+                while self.xtn[i] < (self.xtnTarg - self.k):
                     self.sigmas[i] += self.sigmaeps
                     ty, tw, tyi = self._getKernelY(self.xt[i], self.sigmas[i])
                     self.xtn[i] = len(tw)
@@ -133,16 +137,16 @@ class KernelRegressor(object):
 
     def _getKernelY(self, t, s):
         xw = _gaussianKernel(self.x, t, s)
-        validMask = xw>=(self.wmin*_gaussianKernelMax(s))
+        validMask = xw >= (self.wmin * _gaussianKernelMax(s))
         validW = xw[validMask]
-        validY = self.y[:,validMask]
+        validY = self.y[:, validMask]
         return validY, validW, np.where(validMask)[0]
 
 
 def test():
     ndata = 500
-    x = 3.0*np.random.rand(ndata)
-    y = np.sin(x) + 0.1*(np.random.rand(ndata)-0.5)
+    x = 3.0 * np.random.rand(ndata)
+    y = np.sin(x) + 0.1 * (np.random.rand(ndata) - 0.5)
 
     r = KernelRegressor(k=2, sigma0=0.05, wmin=0.35)
     r.fit(x, y, 0.1, 2.9, 10)
@@ -153,11 +157,12 @@ def test():
 
     import matplotlib.pyplot as plt
     f = plt.figure()
-    plt.scatter(x,y)
+    plt.scatter(x, y)
     plt.plot(r.xt, r.ytmeans, 'r')
-    plt.plot(r.xt, r.ytmeans+r.ytSDs, 'g--')
-    plt.plot(r.xt, r.ytmeans-r.ytSDs, 'g--')
+    plt.plot(r.xt, r.ytmeans + r.ytSDs, 'g--')
+    plt.plot(r.xt, r.ytmeans - r.ytSDs, 'g--')
     plt.show()
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     test()
