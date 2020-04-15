@@ -18,9 +18,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """
 
 from sklearn.ensemble.forest import ExtraTreesRegressor, _partition_trees, _parallel_predict_regression
-from sklearn.utils import array2d
-from sklearn.tree._tree import DTYPE
 from sklearn.externals.joblib import Parallel, delayed
+from sklearn.tree._tree import DTYPE
+from sklearn.utils import array2d
+
 
 class ExtraTreesRegressorVoter(ExtraTreesRegressor):
 
@@ -50,7 +51,7 @@ class ExtraTreesRegressorVoter(ExtraTreesRegressor):
         # Parallel loop
         all_y_hat = Parallel(n_jobs=n_jobs, verbose=self.verbose)(
             delayed(_parallel_predict_regression)(
-            self.estimators_[starts[i]:starts[i + 1]], X)
+                self.estimators_[starts[i]:starts[i + 1]], X)
             for i in range(n_jobs))
 
         return all_y_hat
