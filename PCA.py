@@ -17,7 +17,7 @@ import pickle
 import shelve
 import subprocess
 
-import scipy
+import numpy
 from scipy import io
 from scipy.linalg import eig, svd
 from sklearn.decomposition import IncrementalPCA
@@ -105,7 +105,7 @@ class PrincipalComponents(object):
         if os.path.splitext(filename)[1].lower() != '.pc':
             filename += '.pc'
 
-        scipy.savez(
+        numpy.savez(
             filename,
             mean=self.mean,
             weights=self.weights,
@@ -170,10 +170,10 @@ class PrincipalComponents(object):
         try:
             # allow pickle so that object arrays can be loaded
             # field with None were pickled as object arrays
-            s = scipy.load(filename, allow_pickle=True)
+            s = numpy.load(filename, allow_pickle=True)
         except OSError:
             try:
-                s = scipy.load(filename, encoding='bytes', allow_pickle=True)
+                s = numpy.load(filename, encoding='bytes', allow_pickle=True)
             except:
                 raise IOError('unable to np.load ' + filename)
 
@@ -251,11 +251,11 @@ class PrincipalComponents(object):
             return self.weights[n].copy()
 
     def getWeightsBySD(self, modes, sd):
-        return scipy.array(sd) * scipy.sqrt(self.weights[modes])
-        # ~ return scipy.array([ sd[i]*scipy.sqrt(self.getWeight(modes[i])) for i in xrange(len(modes)) ])
+        return numpy.array(sd) * numpy.sqrt(self.weights[modes])
+        # ~ return numpy.array([ sd[i]*numpy.sqrt(self.getWeight(modes[i])) for i in xrange(len(modes)) ])
 
     def calcSDFromWeights(self, modes, w):
-        return scipy.array(w) / scipy.sqrt(self.weights[modes])
+        return numpy.array(w) / numpy.sqrt(self.weights[modes])
 
     def getMode(self, n=-1):
         if n == -1:
@@ -290,27 +290,27 @@ class PrincipalComponents(object):
 
         # print F.T.shape
         # print data.shape
-        # print scipy.array(variables).shape
+        # print numpy.array(variables).shape
 
-        return scipy.dot(F.T, data)
+        return numpy.dot(F.T, data)
 
         # if modes==None:
-        #   return scipy.dot( self.modes.T, data )
+        #   return numpy.dot( self.modes.T, data )
         # else:
-        #   return scipy.dot( self.modes[:,modes].T, data )
+        #   return numpy.dot( self.modes[:,modes].T, data )
 
     def reconstruct(self, weights, modes):
         if len(weights) != len(modes):
             raise ValueError(
                 'ERROR: PCA.reconstruct: length mismatch between weights and modes: {}, {}'.format(weights, modes))
 
-        f = scipy.array([self.getMode(p) for p in modes]).T
+        f = numpy.array([self.getMode(p) for p in modes]).T
 
         if self.sdNorm:
             print(self.sdNorm)
-            new = (scipy.dot(f, weights).squeeze() * self.getSD() + self.getMean())
+            new = (numpy.dot(f, weights).squeeze() * self.getSD() + self.getMean())
         else:
-            new = (scipy.dot(f, weights).squeeze() + self.getMean())
+            new = (numpy.dot(f, weights).squeeze() + self.getMean())
 
         return new
 
@@ -331,7 +331,7 @@ class PrincipalComponents(object):
 
         """
         # calc m distance
-        d = scipy.sqrt(( w * w / self.weights[modes] ).sum())
+        d = numpy.sqrt(( w * w / self.weights[modes] ).sum())
 
         return d
         """
@@ -350,21 +350,21 @@ class IndependentComponents(PrincipalComponents):
 
     def setModes(self, m):
         # normalise first
-        mag = scipy.sqrt((m * m).sum(0))
-        self.modes = scipy.transpose(m.T / mag[:, scipy.newaxis])
+        mag = numpy.sqrt((m * m).sum(0))
+        self.modes = numpy.transpose(m.T / mag[:, numpy.newaxis])
 
     def reorderModesByVariance(self, data):
         proj = self.project(data)
-        self.variance = scipy.var(proj, axis=1)
+        self.variance = numpy.var(proj, axis=1)
         self.reorderModesByModeWeights(self.variance)
 
     def reorderModesByModeWeights(self, w):
-        wArgS = scipy.argsort(w)[::-1]
-        w = scipy.sort(w)[::-1]
+        wArgS = numpy.argsort(w)[::-1]
+        w = numpy.sort(w)[::-1]
         newModes = []
         for i in wArgS:
             newModes.append(self.modes[:, i])
-        newModes = scipy.transpose(newModes)
+        newModes = numpy.transpose(newModes)
 
         self.setModes(newModes)
         self.setWeights(w)
@@ -395,7 +395,7 @@ class PCList(object):
         for p in self.L:
             # calculate number of modes to use for profile matching
             cumSpec = p.getNormSpectrum().cumsum()
-            pModes.append(scipy.arange(scipy.where(cumSpec > cutoff)[0][0]))
+            pModes.append(numpy.arange(numpy.where(cumSpec > cutoff)[0][0]))
 
         return pModes
 
@@ -423,20 +423,20 @@ class PCA(object):
         """
 
         # calculate mean
-        self.PC.setMean(scipy.mean(data, axis=1))
+        self.PC.setMean(numpy.mean(data, axis=1))
         # centre data
         # ~ print 'datashape:', data.shape
         # ~ print 'meanshape:', self.getMean().shape
-        # ~ tempData = data - scipy.row_stack( self.PC.getMean() )
-        tempData = scipy.array([data[:, i] - self.PC.getMean() for i in range(data.shape[1])]).T
+        # ~ tempData = data - numpy.row_stack( self.PC.getMean() )
+        tempData = numpy.array([data[:, i] - self.PC.getMean() for i in range(data.shape[1])]).T
 
         # normalise by SD
         if sdnorm:
             self.sdnorm = True
             self.PC.sdNorm = True
-            self.PC.setSD(scipy.std(tempData, axis=1))
+            self.PC.setSD(numpy.std(tempData, axis=1))
             # ~ tempData = tempData / row_stack( self.PC.getSD() )
-            tempData = scipy.array([tempData[:, i] / self.PC.getSD() for i in range(tempData.shape[1])]).T
+            tempData = numpy.array([tempData[:, i] / self.PC.getSD() for i in range(tempData.shape[1])]).T
 
         self.data = tempData.squeeze()
 
@@ -449,7 +449,7 @@ class PCA(object):
 
         # calculate covariance
         print('calculating covariance matrix')
-        C = scipy.cov(self.data)
+        C = numpy.cov(self.data)
         # eigen decomposition of covariance matrix
         print('doing eigen decomposition')
         w, modes = eig(C)
@@ -468,10 +468,10 @@ class PCA(object):
         """
         n = self.data.shape[1]
 
-        y = self.data.transpose() / scipy.sqrt(n - 1)
+        y = self.data.transpose() / numpy.sqrt(n - 1)
         u, s, pc = svd(y)
         pc = pc.transpose()
-        var = scipy.multiply(s, s)
+        var = numpy.multiply(s, s)
 
         self.PC.setWeights(var)
         self.PC.setModes(pc[:, :self.data.shape[1]])
@@ -502,7 +502,7 @@ class PCA(object):
             lansvdPath = os.path.expanduser('lansvd_pca')
 
         n = self.data.shape[1]
-        y = self.data.transpose() / scipy.sqrt(n - 1)
+        y = self.data.transpose() / numpy.sqrt(n - 1)
         io.savemat(os.path.join(tempFolder, 'dataMatrix.mat'), {'A': y, 'K': k})
 
         retCode = subprocess.call(['matlab',
@@ -514,10 +514,10 @@ class PCA(object):
         if retCode != 0:
             raise OSError('lansvd failed')
 
-        svdOut = scipy.io.loadmat(os.path.join(tempFolder, 'svdOutput.mat'))
+        svdOut = numpy.io.loadmat(os.path.join(tempFolder, 'svdOutput.mat'))
         s = svdOut['S'].diagonal()
         pc = svdOut['V']
-        var = scipy.multiply(s, s)
+        var = numpy.multiply(s, s)
         # ~ pdb.set_trace()
         self.PC.setWeights(var)
         self.PC.setModes(pc[:, :self.data.shape[1]])
@@ -531,7 +531,7 @@ class PCA(object):
     #   self.ret = mdp.nodes.PCANode(**kwargs)
     #   modes = self.ret.execute(self.data.T)
     #   print 'modes shape:', modes.shape
-    #   self.PC.setWeights( scipy.array(self.ret.d) )
+    #   self.PC.setWeights( numpy.array(self.ret.d) )
     #   self.PC.setModes( self.ret.get_projmatrix() )
     #   self.PC.setProjection( self.ret.get_recmatrix() )
 
@@ -540,18 +540,18 @@ class PCA(object):
     #   #~ modes = self.ret.execute(self.data.T)
     #   self.ret.train(self.data.T)
     #   self.ret.stop_training()
-    #   self.PC.setWeights( scipy.array(self.ret.d) )
+    #   self.PC.setWeights( numpy.array(self.ret.d) )
     #   self.PC.setModes( self.ret.get_projmatrix() )
     #   print 'modes shape:', self.PC.modes.shape
     #   self.PC.setProjection( self.ret.get_recmatrix() )
 
     def modeSort(self, w, e):
-        wArgS = scipy.argsort(w)[::-1]
-        w = scipy.sort(w)[::-1]
+        wArgS = numpy.argsort(w)[::-1]
+        w = numpy.sort(w)[::-1]
         eS = []
         for i in wArgS:
             eS.append(e[:, i])
-        eS = scipy.array(eS)
+        eS = numpy.array(eS)
 
         return w, eS
 
@@ -571,9 +571,9 @@ class PCA(object):
             new.append(p[1] * self.getMode(p[0]))
 
         if self.sdnorm:
-            return scipy.sum(new, axis=0) * self.getSD() + self.getMean()
+            return numpy.sum(new, axis=0) * self.getSD() + self.getMean()
         else:
-            return scipy.sum(new, axis=0) + self.getMean()
+            return numpy.sum(new, axis=0) + self.getMean()
 
     def unpicklePCs(self, fileName):
 
@@ -595,10 +595,10 @@ class PCA(object):
         """
 
         # feature vector
-        f = scipy.array([self.getMode(p) for p in modes]).T
+        f = numpy.array([self.getMode(p) for p in modes]).T
 
         # project to find weights
-        w = scipy.dot(f.T, newData)
+        w = numpy.dot(f.T, newData)
 
         if reconstruct:
             # reconstruct data
@@ -612,21 +612,21 @@ class PCA(object):
         if len(weights) != len(modes):
             raise ValueError('ERROR: PCA.reconstruct: length mismatch between weights and pcs')
 
-        f = scipy.array([self.getMode(p) for p in modes]).T
+        f = numpy.array([self.getMode(p) for p in modes]).T
 
         if self.sdnorm:
-            new = (scipy.dot(f, weights) * self.getSD() + self.getMean())
+            new = (numpy.dot(f, weights) * self.getSD() + self.getMean())
         else:
             if len(weights.shape) == 1:
-                new = (scipy.dot(f, weights) + self.getMean())
+                new = (numpy.dot(f, weights) + self.getMean())
             elif len(weights.shape) == 2:
-                new = (scipy.dot(f, weights) + self.getMean()[:, scipy.newaxis])
+                new = (numpy.dot(f, weights) + self.getMean()[:, numpy.newaxis])
 
         return new
 
     def getWeightsBySD(self, modes, sd):
         # ~ pdb.set_trace()
-        return scipy.array([sd[i] * scipy.sqrt(self.getWeight(modes[i])) for i in range(len(modes))])
+        return numpy.array([sd[i] * numpy.sqrt(self.getWeight(modes[i])) for i in range(len(modes))])
 
     def getMode(self, n=-1):
         return self.PC.getMode(n)
@@ -657,10 +657,10 @@ class CrossValidator(object):
 
     def __init__(self, data, nModes, pcaMethod='svd', pcaArgs=None):
         self.data = data
-        self.dataInd = scipy.arange(self.data.shape[1], dtype=int)
+        self.dataInd = numpy.arange(self.data.shape[1], dtype=int)
         self.pcaMethod = pcaMethod
         self.pcaArgs = pcaArgs
-        self.reconModes = scipy.arange(nModes, dtype=int)
+        self.reconModes = numpy.arange(nModes, dtype=int)
         self.PCA = None
 
     def leaveOneOut(self):
@@ -701,12 +701,12 @@ class CrossValidator(object):
 
         # divide data into k groups
         nPerGroup = int(self.data.shape[1] / k)
-        dataInd = scipy.arange(k).repeat(nPerGroup)
+        dataInd = numpy.arange(k).repeat(nPerGroup)
 
         for ki in range(k):
 
-            leftOutInd = scipy.where(dataInd == ki)[0]
-            leftInInd = scipy.where(dataInd != ki)[0]
+            leftOutInd = numpy.where(dataInd == ki)[0]
+            leftInInd = numpy.where(dataInd != ki)[0]
 
             # do pca
             self.PCA = PCA()
@@ -738,16 +738,16 @@ def plotSpectrum(P, nModes, title, skipfirst=0, cumul=0, PRand=None, barargs={})
     y = P.getNormSpectrum(skipfirst)[:nModes] * 100.0
     if cumul:
         y = y.cumsum()
-    left = scipy.arange(len(y)) * (width + 2 * gap) + gap * 2 + width / 2
+    left = numpy.arange(len(y)) * (width + 2 * gap) + gap * 2 + width / 2
     f = plot.figure()
     ax = f.add_subplot(111)
     barplot = ax.bar(left, y, width=width, **barargs)
-    # barplot = ax.plot(scipy.arange(len(y))+1,y, linewidth=2 )
+    # barplot = ax.plot(numpy.arange(len(y))+1,y, linewidth=2 )
     if PRand is not None:
         yRand = PRand.getNormSpectrum(skipfirst)[:nModes] * 100.0
         if cumul:
             yRand = yRand.cumsum()
-        barplotRand = ax.plot(scipy.arange(len(yRand)) + 1, yRand, '--', linewidth=2)
+        barplotRand = ax.plot(numpy.arange(len(yRand)) + 1, yRand, '--', linewidth=2)
         # barplotRand = ax.bar(left,yRand, width=width)
     else:
         barplotRand = None
@@ -769,7 +769,7 @@ def plotSpectrum(P, nModes, title, skipfirst=0, cumul=0, PRand=None, barargs={})
 # ======================================================================#
 # parallel analysis
 def parallelAnalysisPlot(pc):
-    randDataMatrix = scipy.random.random((pc.modes.shape[0], pc.projectedWeights.shape[1]))
+    randDataMatrix = numpy.random.random((pc.modes.shape[0], pc.projectedWeights.shape[1]))
     randPCA = PCA()
     randPCA.setData(randDataMatrix)
     randPCA.svd_decompose()
@@ -815,8 +815,8 @@ def plotModeScatter(pc, xMode=0, yMode=1, zMode=None, pointLabels=None, nTailLab
                                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
             elif isinstance(nTailLabels, int):
                 # sort weights
-                xSortedArgs = scipy.argsort(xWeights)
-                ySortedArgs = scipy.argsort(yWeights)
+                xSortedArgs = numpy.argsort(xWeights)
+                ySortedArgs = numpy.argsort(yWeights)
 
                 # label x tails
                 for i in xSortedArgs[:nTailLabels]:

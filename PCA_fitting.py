@@ -13,7 +13,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ===============================================================================
 """
 
-import scipy
+import numpy
 import sys
 from scipy.optimize import leastsq, fmin
 
@@ -119,7 +119,7 @@ def modeNObj(x, func, pca, modes, rigidT, funcArgs):
 
 
 def mahalanobis(x):
-    return scipy.sqrt(scipy.multiply(x, x).sum())
+    return numpy.sqrt(numpy.multiply(x, x).sum())
 
 
 class PCFit(object):
@@ -143,11 +143,11 @@ class PCFit(object):
 
     def rigidFit(self, func, x0=None, funcArgs=(), p0=None):
         if x0 is None:
-            x0 = scipy.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+            x0 = numpy.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         if p0 is None:
             p0 = self.pc.getMean().reshape((3, -1)).T
 
-        x0 = scipy.array(x0)
+        x0 = numpy.array(x0)
 
         if self.useFMin:
             self.rigidOpt = fmin(rigidObj, x0,
@@ -175,7 +175,7 @@ class PCFit(object):
         if p0 is None:
             p0 = self.pc.getMean().reshape((3, -1)).T
 
-        x0 = scipy.array(x0)
+        x0 = numpy.array(x0)
         p0 = self.pc.getMean().reshape((3, -1)).T
 
         if self.useFMin:
@@ -198,7 +198,7 @@ class PCFit(object):
 
     def rigidMode0Fit(self, func, x0=None, mWeight=0.0, funcArgs=()):
         if x0 is None:
-            x0 = scipy.hstack((self.rigidOpt, 0.0))
+            x0 = numpy.hstack((self.rigidOpt, 0.0))
         elif len(x0) != 7:
             raise ValueError('x0 must be 7 long')
 
@@ -225,11 +225,11 @@ class PCFit(object):
     def rigidModeNFit(self, func, modes=None, x0=None, mWeight=0.0, maxfev=None, funcArgs=()):
         # fit modes beyond mode 0
         if x0 is None:
-            x0 = scipy.hstack((self.rigidMode0Opt, scipy.zeros(len(modes))))
+            x0 = numpy.hstack((self.rigidMode0Opt, numpy.zeros(len(modes))))
         if modes is None:
             modes = [1, 2, 3]
 
-        modes = scipy.hstack((0, modes))
+        modes = numpy.hstack((0, modes))
         # print '\nx0:', x0
         # print 'mWeight:', mWeight
 
@@ -267,11 +267,11 @@ class PCFit(object):
     def rigidModeNRotateAboutCoMFit(self, func, modes=None, x0=None, mWeight=0.0, maxfev=None, funcArgs=()):
         # fit modes beyond mode 0
         if x0 is None:
-            x0 = scipy.hstack((self.rigidMode0Opt, scipy.zeros(len(modes))))
+            x0 = numpy.hstack((self.rigidMode0Opt, numpy.zeros(len(modes))))
         if modes is None:
             modes = [1, 2, 3]
 
-        modes = scipy.hstack((0, modes))
+        modes = numpy.hstack((0, modes))
         # print '\nrigidModeNRotateAboutCoMFit x0:', x0
         # print 'mWeight:', mWeight
         if self.useFMin:
@@ -308,7 +308,7 @@ class PCFit(object):
     def rigidScaleModeNFit(self, func, modes=None, x0=None, mWeight=0.0, maxfev=None, funcArgs=()):
         # fit modes
         if x0 is None:
-            x0 = scipy.hstack((self.rigidScaleOpt, scipy.zeros(len(modes))))
+            x0 = numpy.hstack((self.rigidScaleOpt, numpy.zeros(len(modes))))
         if modes is None:
             modes = [0, 1, 2]
 
@@ -341,15 +341,15 @@ class PCFit(object):
         pOpt = transform3D.transformRigidScale3DAboutCoM(pOpt.reshape((3, -1)).T, self.rigidScaleModeNOpt[:7])
         return self.rigidScaleModeNOpt, pOpt.T.ravel()
 
-    def modeNFit(self, func, modes=None, x0=None, funcArgs=()):
+    def modeNFit(self, func, modes=None, x0=None, funcArgs=(), maxfev=None, mWeight=1.0):
         """ fit mode weights only
         """
         if x0 is None:
-            x0 = scipy.hstack((self.rigidMode0Opt[-1], scipy.zeros(len(modes))))
+            x0 = numpy.hstack((self.rigidMode0Opt[-1], numpy.zeros(len(modes))))
         if modes is None:
             modes = [1, 2, 3]
 
-        modes = scipy.hstack((0, modes))
+        modes = numpy.hstack((0, modes))
         rigidT = self.rigidMode0Opt[:6]
 
         if self.useFMin:
@@ -380,9 +380,9 @@ def project3DPointsToSSM(data, SSM, projectModes, projectVariables=None,
                          verbose=False, retT=False):
     # rigid align data to SSM mean data
     if initRotation is None:
-        initRotation = scipy.array([0.0, 0.0, 0.0])
+        initRotation = numpy.array([0.0, 0.0, 0.0])
 
-    # landmarkIs = scipy.array(landmarkIs, dtype=int)
+    # landmarkIs = numpy.array(landmarkIs, dtype=int)
 
     # fit has to be done on a subset of recon data is projection is on a subset of variables
     if projectVariables != None:
@@ -397,10 +397,10 @@ def project3DPointsToSSM(data, SSM, projectModes, projectVariables=None,
         print('landmarkIs shape', landmarkIs.shape)
 
     if doScale:
-        align1X0 = scipy.hstack([meanData.mean(0) - data.mean(0), initRotation, 1.0])
+        align1X0 = numpy.hstack([meanData.mean(0) - data.mean(0), initRotation, 1.0])
         T1, dataT = alignment_fitting.fitRigidScale(data, meanData, align1X0, verbose=verbose)
     else:
-        align1X0 = scipy.hstack([meanData.mean(0) - data.mean(0), initRotation])
+        align1X0 = numpy.hstack([meanData.mean(0) - data.mean(0), initRotation])
         # T1, dataT = alignment_fitting.fitRigid( data, meanData, align1X0, verbose=verbose )
         T1, dataT = alignment_fitting.fitRigid(data, meanData, align1X0, xtol=1e-6, epsfcn=1e-9, verbose=verbose)
 
@@ -418,10 +418,10 @@ def project3DPointsToSSM(data, SSM, projectModes, projectVariables=None,
 
     # inverse transform back to image
     if doScale:
-        align2X0 = scipy.hstack([reconDataFit.mean(0) - data.mean(0), -initRotation, 1.0])
+        align2X0 = numpy.hstack([reconDataFit.mean(0) - data.mean(0), -initRotation, 1.0])
         T2, reconDataFitT = alignment_fitting.fitRigidScale(reconDataFit, data, align2X0, verbose=verbose)
     else:
-        align2X0 = scipy.hstack([reconDataFit.mean(0) - data.mean(0), -initRotation])
+        align2X0 = numpy.hstack([reconDataFit.mean(0) - data.mean(0), -initRotation])
         # T2, reconDataT = alignment_fitting.fitRigid( reconData, data, align2X0, verbose=verbose )
         T2, reconDataFitT = alignment_fitting.fitRigid(reconDataFit, data, align2X0, xtol=1e-6, epsfcn=1e-9,
                                                        verbose=verbose)
@@ -477,13 +477,13 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
     print('fitting SSM to points')
     # rigid align data to SSM mean data
     if initRotation is None:
-        initRotation = scipy.array([0.0, 0.0, 0.0])
+        initRotation = numpy.array([0.0, 0.0, 0.0])
     else:
-        initRotation = scipy.array(initRotation)
+        initRotation = numpy.array(initRotation)
 
     # fit has to be done on a subset of recon data is projection is on a subset of variables
     if fitPointIndices != None:
-        fitPointIndices = scipy.array(fitPointIndices, dtype=int)
+        fitPointIndices = numpy.array(fitPointIndices, dtype=int)
         # meanData = SSM.getMean().reshape(coord_shape).T[fitPointIndices,:]
         meanData = recon2coords(SSM.getMean())[fitPointIndices, :]
     else:
@@ -498,7 +498,7 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
         print('fitPointIndices shape:', fitPointIndices.shape)
 
     if doScale:
-        align1X0 = scipy.hstack(
+        align1X0 = numpy.hstack(
             [meanData.mean(0) - data.mean(0), initRotation, 1.0]
         )
         T1, dataT = alignment_fitting.fitRigidScale(
@@ -509,7 +509,7 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
                 landmarkTargets, T1, data.mean(0)
             )
     else:
-        align1X0 = scipy.hstack([meanData.mean(0) - data.mean(0), initRotation])
+        align1X0 = numpy.hstack([meanData.mean(0) - data.mean(0), initRotation])
         # T1, dataT = alignment_fitting.fitRigid( data, meanData, align1X0, verbose=verbose )
         T1, dataT = alignment_fitting.fitRigid(
             data, meanData, align1X0, xtol=1e-6, epsfcn=1e-9, verbose=verbose
@@ -539,7 +539,7 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
             E = ((reconData - dataT) ** 2.0).sum(1) + mahalanobis(X[6:]) * mWeight
 
         if verbose:
-            sys.stdout.write('\robj rms:' + str(scipy.sqrt(E.mean())))
+            sys.stdout.write('\robj rms:' + str(numpy.sqrt(E.mean())))
             sys.stdout.flush()
 
         return E
@@ -562,19 +562,19 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
             EData = ((reconData - dataT) ** 2.0).sum(1) + mahalanobis(X[6:]) * mWeight
 
         ELandmarks = ((landmarkTargetsT - reconLandmarks) ** 2.0).sum(1) * landmarkWeights
-        E = scipy.hstack([EData, ELandmarks])
+        E = numpy.hstack([EData, ELandmarks])
 
         if verbose:
             sys.stdout.write(
                 '\rPC fit rmse: %6.3f (data: %6.3f) (landmarks: %6.3f)' % \
-                (scipy.sqrt(E.mean()), scipy.sqrt(EData.mean()), scipy.sqrt(ELandmarks.mean()))
+                (numpy.sqrt(E.mean()), numpy.sqrt(EData.mean()), numpy.sqrt(ELandmarks.mean()))
             )
             sys.stdout.flush()
 
         return E
 
     # PC Fit
-    x0 = scipy.hstack([[0, 0, 0], initRotation, scipy.zeros(len(fitModes), dtype=float)])
+    x0 = numpy.hstack([[0, 0, 0], initRotation, numpy.zeros(len(fitModes), dtype=float)])
 
     if landmarkTargets is None:
         print('using non-landmark obj func')
@@ -598,24 +598,24 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
     # fit has to be done on a subset of recon data is projection is on a subset of variables
     if fitPointIndices != None:
         # reconDataFit = reconData.ravel()[projectVariables].reshape(coord_shape).T
-        reconDataFit = scipy.array(
+        reconDataFit = numpy.array(
             # reconDataOpt.T.ravel().reshape(coord_shape).T[fitPointIndices,:]
             reconDataOpt[fitPointIndices, :]
         )
     else:
-        reconDataFit = scipy.array(reconDataOpt)
+        reconDataFit = numpy.array(reconDataOpt)
 
     # TODO
     # inverse transform back to image
     if doScale:
-        align2X0 = scipy.hstack([
+        align2X0 = numpy.hstack([
             reconDataFit.mean(0) - data.mean(0), -initRotation, 1.0
         ])
         T2, reconDataFitT = alignment_fitting.fitRigidScale(
             reconDataFit, data, align2X0, verbose=verbose
         )
     else:
-        align2X0 = scipy.hstack([
+        align2X0 = numpy.hstack([
             reconDataFit.mean(0) - data.mean(0), -initRotation
         ])
         # T2, reconDataT = alignment_fitting.fitRigid( reconData, data, align2X0, verbose=verbose )

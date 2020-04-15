@@ -19,7 +19,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import time
 from numpy import log, pi, sqrt, square, diagonal
 from numpy.random import randn, seed
-from scipy import c_, ones, dot, stats, diff
+from numpy import c_, ones, dot, diff
+from scipy import stats
 from scipy.linalg import inv
 
 
