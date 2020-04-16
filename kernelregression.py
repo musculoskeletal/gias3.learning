@@ -11,8 +11,11 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ===============================================================================
 """
+import logging
 
 import numpy as np
+
+log = logging.getLogger(__name__)
 
 
 def _gaussianKernel(T, t, s):
@@ -151,9 +154,9 @@ def test():
     r = KernelRegressor(k=2, sigma0=0.05, wmin=0.35)
     r.fit(x, y, 0.1, 2.9, 10)
 
-    print('xt      sigma     n     y_mean')
+    log.debug('xt      sigma     n     y_mean')
     for xt, s, n, ym in zip(r.xt, r.sigmas, r.xtn, r.ytmeans):
-        print(('{:4.3f}   {:4.3f}   {:4d}    {:4.3f}').format(xt, s, n, ym))
+        log.debug(('{:4.3f}   {:4.3f}   {:4d}    {:4.3f}').format(xt, s, n, ym))
 
     import matplotlib.pyplot as plt
     f = plt.figure()

@@ -12,6 +12,7 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ===============================================================================
 """
+import logging
 
 import numpy
 import sys
@@ -19,6 +20,8 @@ from scipy.optimize import leastsq, fmin
 
 from gias2.common import transform3D
 from gias2.registration import alignment_fitting
+
+log = logging.getLogger(__name__)
 
 
 def rigidObj(x, p, func, funcArgs=()):
@@ -391,10 +394,10 @@ def project3DPointsToSSM(data, SSM, projectModes, projectVariables=None,
     else:
         meanData = SSM.getMean().reshape((3, -1)).T
 
-    print('data shape', data.shape)
-    print('meandata shape', meanData.shape)
+    log.debug('data shape', data.shape)
+    log.debug('meandata shape', meanData.shape)
     if landmarkIs is not None:
-        print('landmarkIs shape', landmarkIs.shape)
+        log.debug('landmarkIs shape', landmarkIs.shape)
 
     if doScale:
         align1X0 = numpy.hstack([meanData.mean(0) - data.mean(0), initRotation, 1.0])
@@ -474,7 +477,7 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
         def recon2coords(xr):
             return xr.reshape((3, -1)).T
 
-    print('fitting SSM to points')
+    log.debug('fitting SSM to points')
     # rigid align data to SSM mean data
     if initRotation is None:
         initRotation = numpy.array([0.0, 0.0, 0.0])
@@ -493,9 +496,9 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
     # print 'data shape:', data.shape
     # print 'meandata shape:', meanData.shape
     if fitPointIndices is None:
-        print('fitPointIndices shape: None')
+        log.debug('fitPointIndices shape: None')
     else:
-        print('fitPointIndices shape:', fitPointIndices.shape)
+        log.debug('fitPointIndices shape:', fitPointIndices.shape)
 
     if doScale:
         align1X0 = numpy.hstack(
@@ -577,15 +580,15 @@ def fitSSMTo3DPoints(data, SSM, fitModes, fitPointIndices=None, mWeight=0.0,
     x0 = numpy.hstack([[0, 0, 0], initRotation, numpy.zeros(len(fitModes), dtype=float)])
 
     if landmarkTargets is None:
-        print('using non-landmark obj func')
+        log.debug('using non-landmark obj func')
         xOpt = leastsq(_obj, x0, xtol=1e-6)[0]
     else:
-        print('using landmark obj func')
+        log.debug('using landmark obj func')
         if verbose:
-            print('landmarks')
-            print(landmarkTargets)
+            log.debug('landmarks')
+            log.debug(landmarkTargets)
         xOpt = leastsq(_objLandmarks, x0, xtol=1e-6)[0]
-    print(' ')
+    log.debug(' ')
 
     reconOpt = SSM.reconstruct(
         SSM.getWeightsBySD(fitModes, xOpt[6:]), fitModes

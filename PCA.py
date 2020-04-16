@@ -11,7 +11,7 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ===============================================================================
 """
-
+import logging
 import os
 import pickle
 import shelve
@@ -22,11 +22,13 @@ from scipy import io
 from scipy.linalg import eig, svd
 from sklearn.decomposition import IncrementalPCA
 
+log = logging.getLogger(__name__)
+
 try:
     from matplotlib import pyplot as plot
     import matplotlib as mpl
 except ImportError:
-    print('No Matplotlib, plotting functions will not work.')
+    log.debug('No Matplotlib, plotting functions will not work.')
 
 
 def loadPrincipalComponents(filename):
@@ -307,7 +309,7 @@ class PrincipalComponents(object):
         f = numpy.array([self.getMode(p) for p in modes]).T
 
         if self.sdNorm:
-            print(self.sdNorm)
+            log.debug(self.sdNorm)
             new = (numpy.dot(f, weights).squeeze() * self.getSD() + self.getMean())
         else:
             new = (numpy.dot(f, weights).squeeze() + self.getMean())
@@ -448,10 +450,10 @@ class PCA(object):
         """
 
         # calculate covariance
-        print('calculating covariance matrix')
+        log.debug('calculating covariance matrix')
         C = numpy.cov(self.data)
         # eigen decomposition of covariance matrix
-        print('doing eigen decomposition')
+        log.debug('doing eigen decomposition')
         w, modes = eig(C)
         # sort from largest to smallest evalue
         # ~ self.weights, self.modes = modeSort( w,e )
