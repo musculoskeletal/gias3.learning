@@ -132,11 +132,11 @@ class PrincipalComponents(object):
 
     def loadPickle(self, filename):
         try:
-            f = open(filename, 'r')
+            f = open(filename, 'rb')
         except IOError:
             raise IOError('unable to open ' + filename)
         else:
-            s = pickle.load(f)
+            s = pickle.load(f, encoding='bytes')
             self.mean = s['mean']
             self.weights = s['weights']
             self.modes = s['modes']
