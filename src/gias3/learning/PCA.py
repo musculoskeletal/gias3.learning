@@ -91,13 +91,7 @@ class PrincipalComponents(object):
         return filename + '.pc'
 
     def savePickle(self, filename):
-        s = {}
-        s['mean'] = self.mean
-        s['weights'] = self.weights
-        s['modes'] = self.modes
-        s['SD'] = self.SD
-        s['sizes'] = self.sizes
-        s['projectedWeights'] = self.projectedWeights
+        s = {'mean': self.mean, 'weights': self.weights, 'modes': self.modes, 'SD': self.SD, 'sizes': self.sizes, 'projectedWeights': self.projectedWeights}
         with open(filename + '.pc', 'w') as f:
             pickle.dump(s, f)
 
