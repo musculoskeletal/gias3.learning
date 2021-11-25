@@ -369,7 +369,7 @@ class IndependentComponents(PrincipalComponents):
 class PCList(object):
 
     def __init__(self, l=None):
-        if l != None:
+        if l is not None:
             self.L = l
         else:
             self.L = []
