@@ -86,32 +86,32 @@ class PrincipalComponents(object):
         for method in [_load_pickle, _load_npz, _load_shelve]:
             try:
                 data = method(file_path)
-
-                # Assign variables from data.
-                byte_keys = b'mean' in data
-                self.mean = data[b'mean'] if byte_keys else data['mean']
-                self.weights = data[b'weights'] if byte_keys else data['weights']
-                self.modes = data[b'modes'] if byte_keys else data['modes']
-                self.SD = data[b'SD'] if byte_keys else data['SD']
-                if self.SD is not None:
-                    if len(self.SD.shape) != 0:
-                        self.sdNorm = True
-                try:
-                    self.projectedWeights = data[b'projectedWeights'] if byte_keys else data['projectedWeights']
-                except KeyError:
-                    self.projectedWeights = None
-                try:
-                    self.sizes = data[b'sizes'] if byte_keys else data['sizes']
-                except KeyError:
-                    self.sizes = None
-
-                # Load successful.
-                return
-
             except:
                 continue
+            else:
+                self._load(data)
+                return
 
         log.error(f"Failed to load PC file {file_path}.")
+
+    def _load(self, data):
+        # Assign variables from data.
+        byte_keys = b'mean' in data
+        self.mean = data[b'mean'] if byte_keys else data['mean']
+        self.weights = data[b'weights'] if byte_keys else data['weights']
+        self.modes = data[b'modes'] if byte_keys else data['modes']
+        self.SD = data[b'SD'] if byte_keys else data['SD']
+        if self.SD is not None:
+            if len(self.SD.shape) != 0:
+                self.sdNorm = True
+        try:
+            self.projectedWeights = data[b'projectedWeights'] if byte_keys else data['projectedWeights']
+        except KeyError:
+            self.projectedWeights = None
+        try:
+            self.sizes = data[b'sizes'] if byte_keys else data['sizes']
+        except KeyError:
+            self.sizes = None
 
     def save(self, file_path):
         def _save_pickle(file, data):
