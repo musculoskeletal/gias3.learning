@@ -50,7 +50,8 @@ def loadIndependentComponents(filename):
 # ======================================================================#
 
 class PrincipalComponents(object):
-    """ class for storing principal components, weight and the mean
+    """
+    Class for storing principal components, weight and the mean.
     """
 
     def __init__(self, mean=None, weights=None, modes=None, SD=None, projectedWeights=None, sizes=None):
@@ -65,54 +66,76 @@ class PrincipalComponents(object):
         self.explained_variance_ = None
         self.explained_variance_ratio_ = None
 
-    def save(self, filename):
-        # return self.savePickle(filename)
-        return self.savez(filename)
+    def load(self, file_path):
+        def _load_pickle(file):
+            with open(file, 'rb') as f:
+                try:
+                    return pickle.load(f)
+                except UnicodeDecodeError:
+                    return pickle.load(f, encoding='latin1')
 
-    def load(self, filename):
-        # return self.loadz(filename)
-        try:
-            return self.loadz(filename)
-        except:
+        def _load_npz(file):
             try:
-                return self.loadPickle(filename)
-            except EOFError:
-                return self.loadShelve(filename)
+                return numpy.load(file, allow_pickle=True)
+            except OSError:
+                return numpy.load(file, encoding='bytes', allow_pickle=True)
 
-    def saveShelve(self, filename):
-        s = shelve.open(filename + '.pc')
-        s['mean'] = self.mean
-        s['weights'] = self.weights
-        s['modes'] = self.modes
-        s['SD'] = self.SD
-        s['sizes'] = self.sizes
-        s['projectedWeights'] = self.projectedWeights
-        s.close()
-        return filename + '.pc'
+        def _load_shelve(file):
+            return shelve.open(file, 'r')
 
-    def savePickle(self, filename):
-        s = {'mean': self.mean, 'weights': self.weights, 'modes': self.modes, 'SD': self.SD, 'sizes': self.sizes, 'projectedWeights': self.projectedWeights}
-        with open(filename + '.pc', 'w') as f:
-            pickle.dump(s, f)
+        for method in [_load_pickle, _load_npz, _load_shelve]:
+            try:
+                data = method(file_path)
+            except:
+                continue
+            else:
+                self._load(data)
+                return
 
-        return filename + '.pc'
+        log.error(f"Failed to load PC file {file_path}.")
 
-    def savez(self, filename):
-        if os.path.splitext(filename)[1].lower() != '.pc':
-            filename += '.pc'
+    def _load(self, data):
+        # Assign variables from data.
+        byte_keys = b'mean' in data
+        self.mean = data[b'mean'] if byte_keys else data['mean']
+        self.weights = data[b'weights'] if byte_keys else data['weights']
+        self.modes = data[b'modes'] if byte_keys else data['modes']
+        self.SD = data[b'SD'] if byte_keys else data['SD']
+        if self.SD is not None:
+            if len(self.SD.shape) != 0:
+                self.sdNorm = True
+        try:
+            self.projectedWeights = data[b'projectedWeights'] if byte_keys else data['projectedWeights']
+        except KeyError:
+            self.projectedWeights = None
+        try:
+            self.sizes = data[b'sizes'] if byte_keys else data['sizes']
+        except KeyError:
+            self.sizes = None
 
-        numpy.savez(
-            filename,
-            mean=self.mean,
-            weights=self.weights,
-            modes=self.modes,
-            SD=self.SD,
-            sizes=self.sizes,
-            projectedWeights=self.projectedWeights
-        )
+    def save(self, file_path):
+        def _save_pickle(file, data):
+            with open(file, 'wb') as f:
+                pickle.dump(data, f)
+
+            return file
+
+        pc_data = {
+            'mean': self.mean,
+            'weights': self.weights,
+            'modes': self.modes,
+            'SD': self.SD,
+            'sizes': self.sizes,
+            'projectedWeights': self.projectedWeights
+        }
+
+        if os.path.splitext(file_path)[1].lower() != '.pc':
+            file_path += '.pc'
+        _save_pickle(file_path, pc_data)
 
     def savemat(self, filename):
-        """Save in MATLAB .mat format
+        """
+        Save in MATLAB .mat format.
         """
         mdict = {
             'mean': self.mean,
@@ -122,94 +145,10 @@ class PrincipalComponents(object):
             # 'sizes': self.sizes,
             'projectedWeights': self.projectedWeights
         }
+
+        if os.path.splitext(filename)[1].lower() != '.mat':
+            filename += '.mat'
         io.savemat(filename, mdict)
-
-    def loadPickle(self, filename):
-        try:
-            f = open(filename, 'rb')
-        except IOError:
-            raise IOError('unable to open ' + filename)
-        else:
-            s = pickle.load(f, encoding='bytes')
-            self.mean = s['mean']
-            self.weights = s['weights']
-            self.modes = s['modes']
-            self.SD = s['SD']
-            if self.SD is not None:
-                self.sdNorm = True
-
-            self.projectedWeights = s.get('projectedWeights')
-            self.sizes = s.get('sizes')
-
-    def loadShelve(self, filename):
-
-        try:
-            s = shelve.open(filename, 'r')
-        except ImportError:
-            import bsddb3
-            _db = bsddb3.hashopen(filename)
-            s = shelve.Shelf(_db)
-        except:
-            raise IOError('unable to open ' + filename)
-        else:
-            self.mean = s['mean']
-            self.weights = s['weights']
-            self.modes = s['modes']
-            self.SD = s['SD']
-            if self.SD is not None:
-                self.sdNorm = True
-
-            self.projectedWeights = s.get('projectedWeights')
-            self.sizes = s.get('sizes')
-
-    def loadz(self, filename):
-        try:
-            # allow pickle so that object arrays can be loaded
-            # field with None were pickled as object arrays
-            s = numpy.load(filename, allow_pickle=True)
-        except OSError:
-            try:
-                s = numpy.load(filename, encoding='bytes', allow_pickle=True)
-            except:
-                raise IOError('unable to np.load ' + filename)
-
-        if b'mean' in s:
-            use_b = True
-        else:
-            use_b = False
-
-        if use_b:
-            self.mean = s[b'mean']
-            self.weights = s[b'weights']
-            self.modes = s[b'modes']
-            self.SD = s[b'SD']
-            if self.SD is not None:
-                if len(self.SD.shape) != 0:
-                    self.sdNorm = True
-            try:
-                self.projectedWeights = s[b'projectedWeights']
-            except KeyError:
-                self.projectedWeights = None
-            try:
-                self.sizes = s[b'sizes']
-            except KeyError:
-                self.sizes = None
-        else:
-            self.mean = s['mean']
-            self.weights = s['weights']
-            self.modes = s['modes']
-            self.SD = s['SD']
-            if self.SD is not None:
-                if len(self.SD.shape) != 0:
-                    self.sdNorm = True
-            try:
-                self.projectedWeights = s['projectedWeights']
-            except KeyError:
-                self.projectedWeights = None
-            try:
-                self.sizes = s['sizes']
-            except KeyError:
-                self.sizes = None
 
     def setProjection(self, P):
         self.projectedWeights = P
