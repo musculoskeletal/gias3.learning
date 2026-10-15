@@ -24,12 +24,6 @@ from sklearn.decomposition import IncrementalPCA
 
 log = logging.getLogger(__name__)
 
-try:
-    from matplotlib import pyplot as plot
-    import matplotlib as mpl
-except ImportError:
-    log.debug('No Matplotlib, plotting functions will not work.')
-
 
 def loadPrincipalComponents(filename):
     pc = PrincipalComponents()
@@ -668,6 +662,8 @@ class CrossValidator(object):
 # ======================================================================#
 # plotting
 def plotSpectrum(P, nModes, title, skipfirst=0, cumul=0, PRand=None, barargs={}):
+    from matplotlib import pyplot as plot
+
     width = 0.8
     gap = (1 - width) / 2
     y = P.getNormSpectrum(skipfirst)[:nModes] * 100.0
@@ -721,6 +717,8 @@ def plotModeScatter(pc, xMode=0, yMode=1, zMode=None, pointLabels=None, nTailLab
     nTailLabels defines number of points that are labelled at the tails of the distributions, 
     can be 'all' to label all points. Point labels are for 2D plots only.
     """
+    from matplotlib import pyplot as plot
+    import matplotlib as mpl
 
     xWeights = pc.projectedWeights[xMode]
     yWeights = pc.projectedWeights[yMode]
